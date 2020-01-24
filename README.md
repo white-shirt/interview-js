@@ -329,7 +329,7 @@ console.log(window.test);  //"test"
 ```
 
 
-  ## 14. 原型
+## 14. 原型
 
   每个JavaScript对象（null除外）都与另一个对象相关联，“另一个对象”就是原型（ptototype），每个对象都从原型继承属性。对象以其原型为模板，从原型继承方法和属性，原型对象可可能拥有原型，并继承属性和方法，一层一层，以此类推。这种关系被称为原型链。
   每个函数都有 prototype 属性，除了 Function.prototype.bind()，该属性指向原型。
@@ -391,10 +391,804 @@ console.log(window.test);  //"test"
   * 对象的 `__proto__` 指向原型， `__proto__` 将对象和原型连接起来组成了原型链  
 
   
+## 15. instanceof
+
+  `instanceof` 是用来判断实例对象的 `__proto__` 属性和构造函数的 `prototype` 属性是不是同一个引用。 
+
+  `instanceof` 的简单实现。  
+
+  ```javascript
+  function instanceof(left, right) {
+    let prototype = right.prototype;
+    let leftproto = left.__proto__;
+    while(true) {
+      if (leftproto === null) 
+        return false
+      if (leftproto === prototype) 
+        return true
+      leftproto = leftproto.__proto__
+    }
+  }
+  ```   
+
+  判断 `leftproto` 是不是强等于 `prototype`, 不等于就继续找 `leftproto.__proto__` 直到 `__proto__` 为null  
+
+
+## 16. 闭包
+
+  闭包的定义： 函数A返回一个函数B，并且函数B中使用了函数A的变量，函数B就被称为闭包。  
+
+  ```javascript
+  function A() {
+    let a = 1;
+    function B() {
+      console.log(a)
+    }
+    return B
+  }
+  ```
+
+  利用闭包解决 `var` 在循环中定义变量的问题  
+
+  ```javascript
+  for (var i = 0; i < 5; i++) {
+    setTimeout(function () {
+      console.log(i)
+    }, i * 1000)
+  }
+  ```
+
+  `setTimeout` 是一个异步函数， 所以会把同步的循环先执行完毕，这时 `i` 就是6了，所以会一直输出一堆6；  
+
+  使用闭包解决方法一：  
+
+  ```javascript
+  for (var i = 1; i <= 5; i++) {
+    (function(j) {
+      setTimeout(function timer() {
+        console.log(j);
+      }, j * 1000);
+    })(i);
+  }
+  ```
+
+  方法二： 使用 `setTimeout` 的第三个参数  
+
+  ```javascript
+  for (var i = 0; i < 5; i++) {
+    setTimeout(function timer(j) {
+      console.log(j)
+    }, i * 1000, i) //第三个参数i会被当作setTimeout中函数的参数
+  }
+  ```
   
+  方法三： 使用 `let` 定义 `i`  
+
+## 17. 深浅拷贝  
+
+  可以通过 `Object.assign` 来解决  
+
+  ```javascript
+  let a = {
+    age: 1
+  }
+  let b = Object.assign({}, a)
+  a.age = 2
+  console.log(b.age)  //1
+  ```
+
+  ### `Object.assign` 
+
+  `Object.assign` 方法用于将所有可枚举属性的值从一个或多个源对象复制到目标对象。并返回目标对象  
+
+  ```javascript
+  const target = { a: 1, b: 2 };
+  const source = { b: 3, c: 4 };
+
+  const returnedTarget = Object.assign(target, source);
+
+  console.log(target); //{ a: 1, b: 3, c: 4 }
+
+  console.log(returnedTarget); //{ a: 1, b: 3, c: 4 }
+  ```
+
+  `Object.assign(target, ...sources)`  
+
+  `target` 目标对象。 `sources` 源对象  `返回值` 目标对象 
+
+  `Object.assign` 方法只拷贝源对象自身并且可枚举的属性到目标对象，因为 `Object.assign` 拷贝的是属性值，针对深拷贝，假如源对象的属性值是一个对象的引用，那么他也只是那个引用。  
+
+  **继承属性和不可枚举属性是不能被拷贝的**  
+
+  ```javascript
+  const obj = Object.create({ foo: 1 }, // foo 是一个继承属性
+    bar: {
+      value: 2  // bar 是一个不可枚举属性
+    },
+    baz: {
+      value: 3,
+      enumerable: true  // baz 是一个自身可枚举属性
+    }
+  )
+  const copy = Object.assign({}, obj);
+  console.log(copy);  // { baz: 3 }
+  ```
+
+  浅拷贝还可以通过展开运算符 (...) 来解决  
+
+  ```javascript
+  let a = {
+    age: 1
+  }
+  let b = { ...a }
+  a.age = 2;
+  console.log(b.age)  // 1
+  ```
+
+  ### 深拷贝  
+
+  深拷贝通常可以通过 `JSON.parse(JSON.stringify(object))` 来解决  
+
+  ```javascript
+  let a = {
+    age: 1,
+    jobs: {
+      first: "xxx"
+    }
+  }
+  let b = JSON.parse(JSON.stringify(a))
+  a.jobs.first = "zzz"
+  console.log(b.jobs.first) // "xxx"
+  ```
+
+  该方法有局限性  
+
+  *  会忽略 `undefined`
+  *  会忽略 `symbol`
+  *  不能序列化函数
+  *  不能解决循环引用的对象
+
+  ```javascript
+  let obj = {
+    a: 1,
+    b: {
+      c: 2,
+      d: 3,
+    },
+  }
+  obj.c = obj.b
+  obj.e = obj.a
+  obj.b.c = obj.c
+  obj.b.d = obj.b
+  obj.b.e = obj.b.c
+  let newObj = JSON.parse(JSON.stringify(obj))
+  console.log(newObj) // 会报错
+  ```
+
+  在遇到函数、 `undefined` 或者 `symbol` 的时候，该对象也不能正常的序列化  
+
+  ```javascript
+  let a = {
+    age: undefined,
+    sex: Symbol('male'),
+    jobs: function() {},
+    name: 'xxx'
+  }
+  let b = JSON.parse(JSON.stringify(a))
+  console.log(b) // {name: "xxx"}
+  ```
+
+  `for .. in ..` 深拷贝,对象和数组
+
+  ```javascript
+  function deepcopy(target, source) {
+    var target = target || {}
+    for (var i in source) {
+      if (typeof source[i] === "object") {
+        target[i] = (source[i].constructor === "Array") ? [] : {}
+        deepcopy(target[i], source[i])
+      } else {
+        target[i] = source[i]
+      }
+    }
+    return target
+  }
+  ```
+
+  如果所需拷贝的对象含有内置类型并且不包含函数，可以使用 `MessageChannel`  
+
+  ```javascript
+  let obj = {
+    a: 1,
+    b: 2,
+    c: {
+      c1: 1,
+      c2: 2
+    }
+  }
+  obj.d = c;
   
+  function deepCopy(obj) {
+    return new Promise((resolve) => {
+      const {port1, port2} = new MessageChannel();
+      port1.onmessage = ev => resolve(ev.data);
+      port2.postMessage(obj);
+    })
+  }
+
+  deepCopy(obj).then((res) => {
+    console.log(res);
+  })
+  ```
+
+  此方法可以深拷贝 `undefined` 和循环引用对象。但是当拷贝的对象有函数对象时还是会报错，可以用 **lodash** 函数库  
+
+
+## 18. 模块化  
+
+  在有 `Babel` 的情况下，可以使用 ES6 的模块化  
+
+  ```javascript
+  // file a.js
+  export function a() {}
+  export function b() {}
+
+  // file b.js
+  export default function () {}
+
+  // file c.js
+  import {a, b} from "./a.js"
+  import xxx from "./b.js"
+  ```
+
+  ### `CommonJS`  
+
+  `CommonJs` 是 Node 独有的规范，浏览器中需要使用到 `Browserify` 解析  
+
+  ```javascript 
+  // file a.js
+  module.exports = {
+    a: 1
+  }
+
+  // or
+  export.a = 1
+
+  // file b.js
+  var module = require("./a,js")
+  module.a  // 1
+  ```
+
+  在上述代码中， `module.exports` 和 `exports` 很容易混淆  
+
+  `module` 和 `exports` 是 Node.js 给每个人 js 文件内置的两个对象，打印这两个对象  
+
+  ```javascript
+  console.log(module) // Module { ..., exports: {}, ... }
+  console.log(exports) // {}
+  ```
+
+  从打印可以看出，`module.exports` 和 `exports` 一开始都是一个空对象，实际上这两个对象指向的是同一个内存地址。  
+
+  但是， `require` 引入的对象本质上是 `module.exports` ，这就产生了一个问题，当 `module.exports` 和 `exports` 指向的不是同一个内存地址时， `exports` 就会失效。所以不能对 `exports` 直接赋值。  
+
+
+  ```javascript
+  module.exports = {
+    name: "Mark"
+  }
+
+  exports = {
+    name: "Mark1"
+  }
+
+  // main.js
+
+  let people = require("./people.js")
+  console.log(people) // {name: "Mark"}
+  ```
+
+  对于 `CommonJs` 和 ES6 中的模块化的区别  
+
+  1. 前者支持动态导入， `require($(path)/xx.js)`, 后者不支持，但是已经有提案。
+  2. 前者是同步导入，后者是异步导入。
+  3. 前者在导出时是值的拷贝，就算导出的值变了，导入的值也不会啊，除非重新导入。后者采用的是实时绑定的方法，导入导出的值都指向同一个内存地址，所以导入的值会随导出的值变化。  
+  4. 后者会编译成 `require/exports` 来执行。  
+
+
+## 19. 防抖
+
+  ### 防抖
+
+  触发事件后在 n 秒内函数只执行一次，如果在 n 秒内又触发了事件，则会重新计算函数执行的时间  
+  函数防抖分为 延迟执行 和 立即执行  
+
+  延迟执行意思是触发事件后函数不会立即执行，而是在 n 秒后执行，如果在 n 秒内又触发了事件，则会重新计算函数执行的时间  
+
+  ```javascript
+  // func 是用户传入的需要防抖的函数
+  // wait 是等待时间
+  const debounce = (func, wait = 50) => {
+    // 缓存一个定时器id
+    let timer = 0;
+    // 这里返回的函数是每次用户时间执行的函数
+    // 如果已经设定了定时器就清空上一次的定时器
+    // 开启一个新的定时器，延迟执行用户传入的方法
+    return function (...args) {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        func.apply(this, args);
+      }, wait)
+    }
+  }
+  // 用户在调用函数的间隔小于 wait 的情况下，上一次的时间还未到就被清除了，函数并不会执行
+  ```
+
+  带有立即执行参数 immediate 的防抖函数  
+
+  ```javascript
+  function debounce(func, wait = 50, immediate = true) {
+    let timer, context, args;
+
+    // 延迟执行函数
+    const later = () => setTimeout(() => {
+      // 延迟函数执行完毕，清空上一次的定时器序号
+      timer = null
+      // 延迟执行的情况下，函数会在延迟函数中执行
+      // 使用到之前缓存的参数和上下文
+      if (!immediate) {
+        func.apply(context, args)
+        context = null
+        args = null
+      }
+    }, wait)
+
+    // 返回触犯后实际执行的函数
+    return function (...params) {
+      // 如果没有创建延迟执行函数 （later），就创建一个
+      if (!timer) {
+        timer = later()
+        // 如果是立即执行，调用函数
+        // 否则缓存参数和调用上下文
+        if (immediate) {
+          func.apply(this, params)
+        } else {
+          context = this
+          args = params
+        }
+      } else {
+        // 如果已经有了延迟函数，则清除原来的函数并重新设定一个定时器，延迟重新计时
+        clearTimeout(timer);
+        timer = later()
+      }
+    }
+  }
+  ```
+
+  * 如果函数是立即执行的，就立即调用。如果函数是延迟执行的，就先缓存上下文和参数，放到延迟函数中去执行。一旦开始了一个定时器，并且定时器还在，每次点击都会清除当前定时器并重新计时。不点击后，定时器时间到，定时器被重置为 `null` ，就可以再次点击了。  
+
+
+## 20. 节流  
+
+节流与防抖动的本质是不一样的，防抖动是将多次执行变成最后一次执行，节流是将多次执行变成每隔一段时间执行。  
+
+### 时间戳节流
+
+```javascript
+  let throttle = function (func, delay) {
+    let pre = +Date.now();
+    return function () {
+      let context = this;
+      let args = arguments;
+      let now = +Date.now();
+      if (now - pre >= delay) {
+        func.apply(context, args);
+        pre = +Date.now();
+      }
+    }
+  }
+```
+
+### 定时器节流  
+
+```javascript
+let throttle = function (func, delay) {
+  let timer = null;
+  return function () {
+    let context = this;
+    let args = arguments;
+    if (!timer) {
+      timer = setTimeout(function () {
+        func.apply(context, args);
+        timer = null;
+      }, delay)
+    }
+  }
+}
+```
+
+当触发事件时设置一个定时器，并执行函数，函数执行完成后重置定时器。再次触发事件时，判断定时器是否存在，如果存在则不执行函数。反之，设置一个定时器，执行函数。当最后一次停止执行函数后，由于定时器的 delay 延迟，可能下一次的函数还是会执行。  
+
+### 时间戳+定时器节流  
+
+```javascript
+let throttle = function (func, delay) {
+  let last, timer;
+  return function () {
+    let context = this;
+    let args = argsments;
+    let now = +Date.now();
+    if (last && now < last + delay) {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        last = now;
+        func.apply(context, args);
+      }, delay)
+    } else {
+      last = now;
+      func.apply(context, args);
+    }
+  }
+}
+```
+
+## 21. 继承  
+
+对象继承有5种方法  
+
+1. 构造函数绑定  
+2. prototype 模式  
+3. 直接继承 prototype
+4. 利用空对象作为中介继承 prototype
+5. 对象拷贝  
+
+### 构造函数绑定  
+
+```javascript
+function Animal() {
+  this.species = "动物";
+}
+function Cat(name, color) {
+  Animal.call(this, arguments);
+  this.color = color;
+  this.name = name;
+}
+```
+
+### prototype模式  
+
+如果“猫”的 prototype 对象指向 Animal 实例，那么所有“猫”的实例都能继承 Animal 了。  
+
+```javascript
+Cat.prototype = new Animal(); 
+//  每个实例都有一个 constructor 属性
+//  默认调用 prototype 对象的 constructor 属性
+//  即 cat1.constructor == Cat.prototype.constructor
+//  运行完上面一句后 Cat 实例的 constructor 指向了 Animal
+//  这会导致继承链的紊乱，必须手动纠正
+//  将 Cat 的 prototype 对象的 constructor 属性重新指向 Cat
+Cat.prototype.constructor = Cat;
+```
+
+### 直接继承 prototype
+
+```javascript
+Cat.prototype = Animal.prototype;
+Cat.prototype.constructor = Cat;
+```
+
+### 利用空对象继承 prototype  
+
+```javascript
+//  F 是空对象，几乎不占内存
+//  不用向实例话 Animal 构造函数，节省内存
+var F = function () {}
+F.prototype = Animal.prototype;
+Cat.prototype = new F();
+Cat.prototype.constructor = Cat;
+
+//  封装成一个函数
+function extend(child, parent) {
+  var F = function () {};
+  F.prototype = parent.prototype;
+  child.prototype = new F();
+  child.prototype.constructor = child;
+}
+```
+
+### 对象拷贝  
+
+参考之前的深浅拷贝
+
+
+## 22. call、apply、bind 的区别  
+
+`call` 和 `apply` 都是为了解决 `this` 的指向，作用都是相同的，只是传参的方式不同。  
+
+除了第一个参数外， `call` 可以接受一个参数列表， `apply` 接受一个参数数组。  
+
+```javascript
+let a = {
+  value: 1
+}
+function getValue(name, age) {
+  console.log(name);
+  console.log(age);
+  console.log(this.value);
+}
+getValue.call(a, "Mark", "10");
+getValue.apply(a, ["Mark", "10"]);
+```
+
+### 模拟实现 `call` `apply`  
+
+* `call` 改变 `this` 的指向，指向传入的第一个参数
+* 改变 `this` 的指向后，让新的对象可以执行该函数，思路可以变成给新的对象添加一个函数，然后执行完后删除这个函数  
+
+```javascript
+let foo = {
+  value: 1
+}
+
+function bar() {
+  console.log(this.value)
+}
+
+bar.call(foo)
+```
+
+**模拟实现第一步**  
+
+把 foo 对象改造一下  
+
+```javascript
+let foo = {
+  value: 1,
+  bar: function () {
+    console.log(this.value);
+  }
+}
+
+foo.bar();
+```
+
+目前为止 `this` 指向了 foo ，相当于给 foo 添加了一个属性，用完可以删除掉这个属性。  
+
+```javascript
+foo.fn = bar; // 给 foo 添加一个属性
+foo.fn(); // 执行这个属性
+delete foo.fn;  // 删除这个属性
+```
+
+按照这个思路模拟重写 `call`  
+
+```javascript
+Function.prototype.call2 = function (context) {
+  // context 为 call 函数的第一个参数，如果不传入默认为 window
+  let context = context || window;
+  // 获取调用 call2 的函数，this
+  context.fn = this;
+  // 执行函数
+  context.fn();
+  // 删除临时添加的属性
+  delete context.fn;
+}
+```
+
+上面的重写版本实现的是没有参数传入的情况  
+
+重写带参数的 `call` 函数  
+
+```javascript
+Function.prototype.call3 = function (context) {
+  let context = context || window;
+  context.fn = this;
+  // Array.from() 可以将类数组对象转变成真正的数组
+  // Array.from().slice(1) 将 context 后面的参数取出来
+  let args = Array.from(arguments).slice(1);
+  let result = context.fn(...args);
+  delete context.fn;
+  return result;
+}
+```
+
+**`apply` 的实现和 `call` 的实现类似**  
+
+```javascript
+Function.prototype.apply1 = function (context) {
+  let context = context || window;
+  context.fn = this;
+
+  let result;
+  // 判断是否存在第二个参数
+  // apply 的第二个参数是一个数组，可以直接展开
+  if (arguments[1]) result = context.fn(...arguments[1]);
+  else context.fn();
+
+  delete context.fn;
+  return result;
+}
+```
+
+**重写 `bind` 函数**  
+
+`bind()` 方法创建一个新的函数，在 `bind()` 被调用时，这个新的函数的 `this` 被指定为 `bind()` 的第一个参数，其余的参数将作为新函数的参数。  
+
+```javascript
+Function.prototype.bind1 = function (context) {
+  // 只能是函数调用此方法，所以要进行判断
+  // this 为调用这个方法的函数
+  if (typeof this !== "function") {
+    throw new TypeError(this + 'is not a function');
+  }
+  let _this = this;
+  // 取出第一次传入的参数
+  let args = Array.from(arguments).slice(1);
+  // 返回一个新函数
+  return function F() {
+    // 取出返回的新函数中传递的参数
+    let afterargs = Array.from(arguments).slice();
+    // 因为 bind() 方法返回的是一个新的函数
+    // 这个新的函数可能会被 new 出来一个实例
+    // 新的实例执行的时候，之前重新绑定的 this 的指向就失效了
+    // 判断返回函数是否被当作构造函数通过 new F() 创建一个实例
+    // this 指的是创建的实例
+    if (this instanceof F) return new _this(...args, ...afterargs);
+    return _this.apply(context, args.concat(afterargs));
+  }
+}
+```
+
+## 23. `Promise` 实现  
+
+`Promise` 是一种异步编程的解决方案。简单来说 `promise` 就是一个容器，里面装着某个未来才会结束的事件的结果， 从语法上来讲， `Promise` 是一个对象，从它可以获取异步操作的消息。  
+
+`Promise` 的特点  
+
+1. 对象的状态不受外界的影响。有三种状态 `pending` (进行中)、 `fulfilled` (已成功)、 `rejected` (已失败)。只有异步操作的结果可以决定当前是哪一种状态。  
+2. 一旦状态改变，就不会再变。 `pending` -> `fulfilled` , `pending` -> `rejected` 。  
+
+`Promise` 的缺点  
+
+1. 无法取消，一旦新建就会立即执行，无法中途取消。
+2. 如果不设置回调函数， `Promise` 内部抛出的错误，不会反应到外部。
+3. 当处于 `pending` 状态时，无法得知目前进展到哪一步。
+
+### `Promise.prototype.then()`  
+
+`then` 方法的第一个参数是 `resolved` 状态的回调函数，第二个参数是（可选） `rejected` 状态的回调函数。  
+采用链式的 `then`，前一个回调函数有可能返回的还是一个 `Promise` 对象，这时后一个回调函数就会等待该 `Promise` 对象的状态发生改变时才会被调用。  
+
+```javascript
+getJSON("/post/1.json").then(function (post) {
+  return getJSON(post.url);
+}).then(function (url) {
+  console.log("resolved": url)
+}, function (err) {
+  console.log("rejected": err);
+})
+```
+
+上面的代码中，第一个 `then` 返回会的另一个 `Promise` 对象。 这时第二个 `then` 方法指定的回调函数就会等这个新的 `Promise` 对象的状态发生改变。如果变成 `resolved` ,就调用第一个回调函数，反之调用第二个回调函数。  
+
+### `Promise.prototype.catch()`  
+
+`Promise.prototype.catch()` 是 `.then.(null, rejection)` 或 `.then(undefined, rejection)` 的别名，用于指定发生错误时的回调函数。  
+
+```javascript
+getJSON("/post/1.json").then(function (post) {
+  return getJSON(post.url);
+}).then(function (url) {
+  // dosomething
+}).catch(function (err) {
+  // 处理前面三个 Promise 产生的错误
+})
+```
+
+上述代码中，一共三个 Promise 对象，它们中任何一个抛出错误都会被最后一个 `catch` 捕获。  
+建议总是要在 Promise 最后面添加 `catch` 方法。 
+`catch` 方法返回的也是一个 Promise 对象，后面可以接 `catch` 或 `then` 方法。  
+
+### `Promise.prototype.finally()`  
+
+`finally` 方法不管 Promise 对象最后的状态如何，都会执行的操作。  
+
+### `Promise.prototype.all()`  
+
+`Promise.all()` 方法用于将多个 Promise 实例包装成一个新的 Promise 实例。  
+
+```javascript
+const p = Promise.all([p1, p2, p3]);
+```
+
+`Promise.all()` 方法接受一个数组作为参数，p1，p2，p3 都是 Promise 实例。  
+`p` 的状态有 p1，p2，p3 决定。  
+1. p1，p2，p3 的状态都为 `fulfilled`， `p` 的状态才会变成 `fulfilled` ，此时，p1，p2，p3，的返回值组成一个数组传递给 `p` 的回调函数。  
+2. 只要 p1，p2，p3 之中有一个被 `rejected`, `p` 的状态就变成 `rejected`, 此时第一个被 `rejected` 的实例的返回值，会被传递给 `p` 的回调函数。  
+
+如果作为参数的 Promise 实例自己定一个 `catch` 方法，那么它一旦被 `rejected`, 并不会触发 `Promise.all()` 的 `catch` 方法。  
+
+```javascript
+const p1 = new Promise((resolve, reject) => {
+  resolve("hello")
+}).then(result => result)
+.catch(e => e);
+
+const p2 = new Promise((resolve, reject) => {
+  throw new Error("error!!")
+})
+.then(result => result)
+.catch(e => e);
+
+Promise.all([p1, p2])
+.then(result => console.log(result))
+.catch(e => console.log(e))
+
+// ["hello", Error: error!!]
+```
+
+上述代码中， p1 会 `resolved`, p2 首先会 `rejected`, 但是 p2 有自己的 `catch` 方法，该方法返回一个 Promise 实例， p2 实际上指向的就是这个实例， 该实例执行完 `catch` 方法后，也会变成 `resolved` 状态，导致 `Promise.all()` 中两个参数都进入到 `resolved` 状态，一次会调用 `then` 方法中的回调函数，而不会调用 `catch` 方法。 如果 p2 没有自己的 `catch` 方法，就会调用 `Promise.all()` 的 `catch` 方法。  
+
+
+### `Promise.race()`  
+
+该方法和 `Promise.all()` 方法类似，同样是将多个 Promise 实例包装成一个新的 Promise 实例。  
+
+```javascript
+const p = Promise.race([p1, p2, p3]);
+```
+
+上述代码中，只要 p1，p2，p3 之中有一个实例率先改变状态， `p` 的状态就改变。那个率先改变状态的 Promise 实例的返回值，就传递给 `p` 的回调函数。  
+
+```javascript
+const p = Promise.race([
+  fetch("xxxxx"),
+  new Promise((resolve, reject) => {
+    setTimeout(() => reject(new Error("reject timeout")), 5000)
+  })
+])
+
+p.then(() => {
   
-  
+})
+.catch(e => {
+  console.log(e)
+})
+```
+
+上面代码中，如果 5 秒内 fetch 方法无法返回结果，变量 `p` 的状态就会变成 `rejected`, 否则变成 `resolved`。  
+
+
+### `Promise.allSettled()`  
+
+`Promise.allSettled()` 方法接受一组 Promise 实例作为参数，包装成一个新的 Promise 实例。当所有的参数实例都返回结果，不管是 `resolved` 还是 `rejected`，包装实例才会结束。 并且该包装实例一旦结束，状态总会是 `fulfilled`, 不会变成 `rejected`。  
+
+```javascript
+const promise = [fetch("xxxx"), fetch("xxxx")];
+
+// Promise.allSettled() 方法返回的结果是一个数组
+// 数组的每一个成员都是一个对象，每个对象对应方法的每个参数
+// 每个对象都有 status 属性，该属性的只只可能是 fulfilled 或 rejected
+// fulfilled 时，对象有 value 属性
+// rejected 时，对象有 reason 属性
+// 上述两个属性值对应两种状态的实例返回值
+const result = await Promise.allSettled(promise);
+
+// 过滤出成功的请求
+const successPromise = result.filter(p => p.status === "fulfilled");
+
+//过滤出失败的请求,并输出原因
+const errors = result.filter(p => p.status === "rejected")
+.map(p => p.reason)
+```
+
+
+
+
+
+
+
+
 
 
   
