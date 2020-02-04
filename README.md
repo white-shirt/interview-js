@@ -1290,6 +1290,48 @@ for (let n of fibonacci()) {
 ```
 
 
+## 25. Map、 FlatMap、 Reduce  
+
+`Map`  
+
+`Map()` 方法定义在 javascript 的 Array 中，它返回一个新的数组，这个新数组中的值为原始数组中的值调用函数后处理的值。  
+
+```javascript
+array.map(function callback(currentValue, index, arr) {}, thisArg)
+```
+
+`callback`  
+  生成新数组元素的函数  
+    `currentValue` 数组中正在处理的元素  
+    `index` 正在处理的元素的索引  
+    `arr` map 方法调用的数组  
+
+`thisArg` 执行 callback 函数时值被用作 this  
+
+```javascript
+var numbers = [1, 4, 9];
+var roots = numbers.map(Math.sqrt);
+// [1, 2, 3]
+```
+
+```javascript
+var objArray = [
+  {key: 1, value: 10},
+  {key: 2, value: 20},
+  {key: 3, value: 30}
+]
+
+var reformatObj = objArray.map(function (obj) {
+  var newObj = {};
+  newObj[obj.key] = obj.value;
+  return newObj;
+})
+
+// [{1: 10}, {2: 20}, {3: 30}]
+```
+
+
+
 
 
 
