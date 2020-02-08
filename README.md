@@ -1330,6 +1330,100 @@ var reformatObj = objArray.map(function (obj) {
 // [{1: 10}, {2: 20}, {3: 30}]
 ```
 
+`FlatMap`  
+
+FlatMap 和 Map 的作用几乎相同，但是对于多位数组来说，会将原数组降维。
+
+```javascript
+[1, [2], 3].flatMap((v) => v + 1)
+
+// [2, 3, 4]
+```
+
+`reduce`  
+
+将数组中的每一个元素执行一个reduce中的函数，其结果汇总为单个返回值。  
+
+reduce 为数组中的每一个元素依次执行 callback 函数，不包括被删除的元素和未被赋值的元素，函数接受四个参数：  
+
+* accumulator 累计器
+* currentValue 当前值  
+* currentIndex 当前索引 
+* array 愿数组  
+
+回调函数执行时，如果提供了 initialValue ，那么 accumulator 的取值为 initialValue， currentValue 取数组中的第一个值，如果没有提供 initialValue 那么 accumulator 取数组中的第一个值。currentValue 取数组中的第二个值。  
+
+如果空数组没有 initialValue 则会抛出 TypeError 。如果数组中只有一个元素，且没有提供 initialValue 则 callback 不会执行，这个元素会被返回。如果提供了 initialValue 但是数组为空，那么 callback 不会执行，此唯一值会被返回。  
+
+
+```javascript
+const array1 = [1, 2, 3, 4]
+const reducer = (accumulator, currentValue) => accumulator + currentValue
+
+console.log(array1.reduce(reducer)) // 10  1 + 2 + 3 + 4
+
+console.log(array1.reduce(reducer, 5)) // 15 5 + 1 + 2 + 3 + 4
+```
+
+
+## 26. async 和 await  
+
+一个函数如果加上 async ，那么该函数就会返回一个 Promise  
+
+```javascript
+async function test() {
+  return '1'
+}
+
+console.log(test()) // Promise {<resolved>: "1"}
+```
+
+可以把 async 看成将函数返回值使用 Promise.resolve() 包裹了下。  
+
+```javascript
+function sleep() {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log("finish")
+      resolve("sleep")
+    }, 2000)
+  })
+}
+
+async function test() {
+  await sleep()
+  console.log("object")
+}
+
+// finish
+// object
+```
+
+因为 await 会等待 sleep 函数 resolve， 所以即使后面是同步函数，也不会先执行同步函数再执行异步函数。  
+
+await 可能会导致性能问题， 因为 awiat 会阻塞代码。  
+
+```javascript
+var a = 0
+var b = async () => {
+  a = a + await 10
+  console.log('2', a)  // '2' 10
+  a = (await 10) + a
+  console.log('3', a)  // '3' 20
+}
+
+b()
+a++
+console.log('1', a)  // '1' 1
+```
+
+* 首先函数 b 先执行，函数 b 是一个异步函数，在执行到 await 10 之前变量 a 还是 0
+* 因为 await 是异步操作，遇到 await 就会立即返回一个 pending 状态的 Promise 对象，暂时返回代码的控制权，使得函数外的代码得以继续执行，所以会先执行 `console.log('1', a)`  
+* 同步的代码执行完毕，开始执行异步代码  
+
+
+## 27. proxy
+
 
 
 
