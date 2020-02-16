@@ -1422,8 +1422,79 @@ console.log('1', a)  // '1' 1
 * 同步的代码执行完毕，开始执行异步代码  
 
 
-## 27. proxy
+## 27. Proxy
 
+ES6 中新增的功能，用来自定义对象中的操作。  
+
+Proxy 可以理解成，在目标对象之前架设一层“拦截”，外界对该对象的访问，都必须先通过这层拦截，因此这种拦截机制可以对外界的访问进行过滤和改写。可以理解为“代理”。  
+
+```javascript
+var proxy = new Proxy(target, handler)
+```
+
+* `target` 参数表示要拦截的目标对象
+* `handler` 参数是一个对象，用来定制拦截行为  
+
+```javascript
+var proxy = new Proxy({}, {
+  get: function (target, propKey) {
+    return 35;
+  }
+})
+
+proxy.time  // 35
+proxy.name  // 35
+```
+
+上述代码中， `Proxy` 接受两个参数，第一个参数就是要代理的对象，第二个参数是一个配置对象，对于每一个被代理的操作，需要提供一个对应的处理函数，该函数将拦截对应的操作。上述方法中配置对象有一个 get 方法，用来拦截对目标对象属性的访问请求， get 方法的两个参数分别为目标对象和所要访问的属性。  
+
+```javascript
+let handler = {
+  get: function (target, propKey) {
+    return propKey in target ? target[propKey] : 37;
+  }
+}
+
+let p = new Proxy({}, handler)
+
+p.a = 1
+p.b = 2
+
+console.log(p.a, p.b)  // 1 2
+
+console.log('c' in p, p.c)  // false 37
+```
+
+上述例子中，当对象不存在某一个属性时，返回值为 37  
+
+通过代理可以轻松的验证向一个对象的传值，如下面的例子  
+
+```javascript
+var validator = {
+  set: function (target, prop, value) {
+    if (prop === "age") {
+      if (!Number.isInteger(value)) {
+        throw new TypeError("The age is not an integer");
+      }
+      if (value > 200) {
+        throw new TypeError("The age seems invalid");
+      }
+    }
+
+    target[prop] = value;
+
+    return true;
+  }
+}
+
+var person = new Proxy({}, validator);
+
+person.age = 100;
+
+console.log(person.age);  // 100
+
+person.age = "young";  // Uncaught TypeError: The age is not an integer
+```
 
 
 
