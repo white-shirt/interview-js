@@ -746,7 +746,317 @@ for (let [index, elem] of ['a', 'b'].entries()) {
 
 ### 属性的可枚举性和遍历  
 
-#### 可枚举性
+#### 可枚举性  
+
+对象的每个属性都有一个描述对象（`Descriptor`），用来控制该属性的行为 `Object.getOwnPropertyDescriptor` 方法可以获取该属性的描述对象。  
+
+```javascript
+let obj = { foo: 123 };
+Object.getOwnPropertyDescriptor(obj, 'foo')
+//  {
+//    value: 123,
+//    writable: true,
+//    enumerable: true,
+//    configurable: true
+//  }
+```
+
+描述对象的 `enumerable` 属性，称为“可枚举性”，如果该属性为 `false` ，就表示某些操作会忽略当前属性。  
+
+* `for...in` 循环：只遍历对象自身的和继承的可枚举的属性。
+* `Object.keys()` ：返回对象自身的所有可枚举的属性的键名。
+* `JSON.stringify()` ：只串行化对象自身的可枚举的属性。
+* `Object.assign()` ： 忽略 `enumerable` 为 `false` 的属性，只拷贝对象自身的可枚举的属性。  
+
+```javascript
+Object.getOwnPropertyDescriptor(Object.prototype, 'toString').enumerable
+// false
+
+Object.getOwnPropertyDescriptor([], 'length').enumerable
+// false
+```
+
+上面代码中，`toString` 和 `length` 属性的 `enumerable` 都是 `false` ，因此 `for...in` 不会遍历到这两个继承自原型的属性。  
+
+#### 属性的遍历  
+
+* `for...in` 循环遍历对象自身的和继承的可枚举属性（不含 Symbol 属性）
+* `Object.keys(obj)` 包括对象自身的（不含继承的）所有可枚举属性（不含 `Symbol` 属性）的键名。
+* `Object.getOwnPropertyNames(obj)` 返回一个数组，包含对象自身的所有属性（不含 `Symbol` 属性，但是包括不可枚举属性）的键名。
+* `Object.getOwnPropertySymbols(obj)` 返回一个数组，包含对象自身的所有 `Symbol` 属性的键名。
+* `Reflect.ownKeys(obj)` 返回一个数组，包含对象自身的所有键名，不管键名是 `Symbol` 或字符串，也不管是否可枚举。  
+
+
+### super 关键字  
+
+ES6 又新增了另一个类似的关键字 `super` ，指向当前对象的原型对象。  
+
+```javascript
+const proto = {
+  foo: 'hello'
+};
+
+const obj = {
+  foo: 'world',
+  find() {
+    return super.foo;
+  }
+};
+
+Object.setPrototypeOf(obj, proto);
+obj.find() // "hello"
+```
+
+上面代码中，对象 `obj.find()` 方法之中，通过 `super.foo` 引用了原型对象 `proto` 的 `foo` 属性。  
+注意，`super` 关键字表示原型对象时，只能用在对象的方法之中，用在其他地方都会报错。  
+
+
+## 链判断运算符  
+
+编程实务中，如果读取对象内部的某个属性，往往需要判断一下该对象是否存在。比如，要读取 `message.body.user.firstName`，安全的写法是写成下面这样。  
+
+```javascript
+const firstName = (message
+  && message.body
+  && message.body.user
+  && message.body.user.firstName) || 'default';
+```
+
+这样的层层判断非常麻烦，因此 ES2020 引入了“链判断运算符”（optional chaining operator）`?.`，简化上面的写法。  
+
+```javascript
+const firstName = message?.body?.user?.firstName || 'default';
+```
+
+链判断运算符有三种用法。  
+* `obj?.prop` // 对象属性
+* `obj?.[expr]` // 同上
+* `func?.(...args)` // 函数或对象方法的调用  
+
+
+
+## 对象的新增方法  
+
+### Object.is()  
+
+`Object.is` 用来比较两个值是否严格相等，与严格比较运算符（ `===` ）的行为基本一致。  
+
+```javascript
+Object.is('foo', 'foo')
+// true
+Object.is({}, {})
+// false
+```
+
+### Object.assign()  
+
+`Object.assign` 方法用于对象的合并，将源对象（ `source` ）的所有可枚举属性，复制到目标对象（ `target` ）。  
+`Object.assign` 方法的第一个参数是目标对象，后面的参数都是源对象。  
+
+
+```javascript
+const target = { a: 1 };
+
+const source1 = { b: 2 };
+const source2 = { c: 3 };
+
+Object.assign(target, source1, source2);
+target // {a:1, b:2, c:3}
+```
+
+#### 数组的处理  
+
+```javascript
+Object.assign([1, 2, 3], [4, 5])
+// [4, 5, 3]
+```
+
+上面代码中，`Object.assign`把数组视为属性名为 0、1、2 的对象，因此源数组的 0 号属性4覆盖了目标数组的 0 号属性1。  
+
+#### 取值函数的处理
+
+```javascript
+const source = {
+  get foo() { return 1 }
+};
+const target = {};
+
+Object.assign(target, source)
+// { foo: 1 }
+```
+
+上面代码中，`source` 对象的 `foo` 属性是一个取值函数，`Object.assign` 不会复制这个取值函数，只会拿到值以后，将这个值复制过去。  
+
+#### 克隆对象  
+
+```javascript
+function clone(origin) {
+  return Object.assign({}, origin);
+}
+```
+
+采用这种方法克隆，只能克隆原始对象自身的值，不能克隆它继承的值。如果想要保持继承链，可以采用下面的代码。  
+
+```javascript
+function clone(origin) {
+  let originProto = Object.getPrototypeOf(origin);
+  return Object.assign(Object.create(originProto), origin);
+}
+```
+
+### Object.getOwnPropertyDescriptors()  
+
+返回指定对象所有自身属性（非继承属性）的描述对象。  
+
+```javascript
+const obj = {
+  foo: 123,
+  get bar() { return 'abc' }
+};
+
+Object.getOwnPropertyDescriptors(obj)
+// { foo:
+//    { value: 123,
+//      writable: true,
+//      enumerable: true,
+//      configurable: true },
+//   bar:
+//    { get: [Function: get bar],
+//      set: undefined,
+//      enumerable: true,
+//      configurable: true } }
+```
+
+### __proto__属性  
+
+`__proto__` 属性（前后各两个下划线），用来读取或设置当前对象的 `prototype` 对象。目前，所有浏览器（包括 IE11）都部署了这个属性。  
+
+```javascript
+// es5 的写法
+const obj = {
+  method: function() { ... }
+};
+obj.__proto__ = someOtherObj;
+
+// es6 的写法
+var obj = Object.create(someOtherObj);
+obj.method = function() { ... };
+```
+
+### Object.setPrototypeOf()  
+
+`Object.setPrototypeOf` 方法的作用与 `__proto__` 相同，用来设置一个对象的 `prototype` 对象，返回参数对象本身。它是 `ES6` 正式推荐的设置原型对象的方法。  
+
+```javascript
+// 格式
+Object.setPrototypeOf(object, prototype)
+
+// 用法
+const o = Object.setPrototypeOf({}, null);
+
+// 该方法等同于下面的函数。
+function setPrototypeOf(obj, proto) {
+  obj.__proto__ = proto;
+  return obj;
+}
+```
+
+```javascript
+let proto = {};
+let obj = { x: 10 };
+Object.setPrototypeOf(obj, proto);
+
+proto.y = 20;
+proto.z = 40;
+
+obj.x // 10
+obj.y // 20
+obj.z // 40
+```
+
+### Object.getPrototypeOf()  
+
+该方法与 `Object.setPrototypeOf` 方法配套，用于读取一个对象的原型对象。  
+
+如果参数不是对象，会被自动转为对象。  
+
+```javascript
+// 等同于 Object.getPrototypeOf(Number(1))
+Object.getPrototypeOf(1)
+// Number {[[PrimitiveValue]]: 0}
+
+// 等同于 Object.getPrototypeOf(String('foo'))
+Object.getPrototypeOf('foo')
+// String {length: 0, [[PrimitiveValue]]: ""}
+
+// 等同于 Object.getPrototypeOf(Boolean(true))
+Object.getPrototypeOf(true)
+// Boolean {[[PrimitiveValue]]: false}
+
+Object.getPrototypeOf(1) === Number.prototype // true
+Object.getPrototypeOf('foo') === String.prototype // true
+Object.getPrototypeOf(true) === Boolean.prototype // true
+```
+
+### Object.keys()，Object.values()，Object.entries()   
+
+#### Object.keys()  
+
+返回一个数组，成员是参数对象自身的（不含继承的）所有可遍历（enumerable）属性的键名。
+
+ES2017 引入了跟 `Object.keys` 配套的 `Object.values` 和 `Object.entries` ，作为遍历一个对象的补充手段，供 `for...of` 循环使用。  
+
+```javascript
+let { keys, values, entries } = Object;
+
+let obj = { a: 1, b: 2, c: 3 };
+
+for (let key of keys(obj)) {
+  console.log(key); // 'a', 'b', 'c'
+}
+
+for (let value of values(obj)) {
+  console.log(value); // 1, 2, 3
+}
+
+for (let [key, value] of entries(obj)) {
+  console.log([key, value]); // ['a', 1], ['b', 2], ['c', 3]
+}
+```
+
+#### Object.values()  
+
+返回一个数组，成员是参数对象自身的（不含继承的）所有可遍历（enumerable）属性的键值。  
+
+`Object.values` 只返回对象自身的可遍历属性。  
+
+```javascript
+const obj = Object.create({}, {p: {value: 42}});
+Object.values(obj) // []
+```
+
+因为 `p` 的属性描述对象的 `enumerable` 默认是 `false` ，`Object.values` 不会返回这个属性。只要把 `enumerable` 改成 `true` ，`Object.values` 就会返回属性p的值。  
+
+```javascript
+const obj = Object.create({}, {p:
+  {
+    value: 42,
+    enumerable: true
+  }
+});
+Object.values(obj) // [42]
+```
+
+#### Object.entries()  
+
+返回一个数组，成员是参数对象自身的（不含继承的）所有可遍历（enumerable）属性的键值对数组。  
+
+```javascript
+const obj = { foo: 'bar', baz: 42 };
+Object.entries(obj)
+// [ ["foo", "bar"], ["baz", 42] ]
+```
+
 
 
 
