@@ -11,10 +11,12 @@
         <input type="text" v-model="school.name"/>
         <div>{{ school.name }}</div>
         <div>{{ school.age }}</div>
+        {{getNewName}}
         <ul>
             <li>1</li>
             <li>2</li>
         </ul>
+        <button v-on:click="change">按钮</button>
     </div>
     <script>
         let vm = new Vue({
@@ -25,6 +27,16 @@
                         name: "武大",
                         age: 100
                     }
+                }
+            },
+            methods: {
+                change() {
+                    this.school.name = "华科";
+                }
+            },
+            computed: {
+                getNewName() {
+                    return this.school.name + "武汉";
                 }
             }
         })

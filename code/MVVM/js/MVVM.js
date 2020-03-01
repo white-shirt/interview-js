@@ -42,11 +42,29 @@ class Vue {
     constructor(options) {
         this.$el = options.el;
         this.$data = options.data();
+        let computed = options.computed;
         // 如果存在根元素 编译模板
         if (this.$el) {
+            for (let key in computed) {
+                Object.defineProperty(this.$data, key, {
+                    get: () => {
+                        return computed[key].call(this);
+                    }
+                })
+            }
+            this.proxyVm(this.$data);
             // 用 Object.defineProperty 来做数据劫持
             new Observer(this.$data);
             new Compiler(this.$el, this)
+        }
+    }
+    proxyVm(data) {
+        for (let key in data) {
+            Object.defineProperty(this, key, {
+                get() {
+                    return data[key]
+                }
+            })
         }
     }
 }
@@ -118,8 +136,9 @@ class Compiler {
             //  判断是不是 带 v-model v-html v-bind 等 指令
             if (this.isDirective(name)) {
                 let [,directive] = name.split('-');
+                let [directiveName,EventName] = directive.split(':');
                 // 需要调用不同的指令来处理
-                CompileUtil[directive](node, expr, this.vm)        
+                CompileUtil[directiveName](node, expr, this.vm, EventName);     
             }  
         })
     }
@@ -173,6 +192,11 @@ CompileUtil = {
         })
         let value = this.getVal(vm, expr);
         fn(node, value);
+    },
+    on(node, expr, vm, eventName) {
+        node.addEventListener(eventName, () => {
+            alert(expr)
+        })    
     },
     html() {
         // node.innerHTML
