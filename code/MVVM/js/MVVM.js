@@ -43,6 +43,7 @@ class Vue {
         this.$el = options.el;
         this.$data = options.data();
         let computed = options.computed;
+        let methods = options.methods;
         // 如果存在根元素 编译模板
         if (this.$el) {
             for (let key in computed) {
@@ -51,6 +52,13 @@ class Vue {
                         return computed[key].call(this);
                     }
                 })
+            }
+            for (let key in methods) {
+                Object.defineProperty(this, key, {
+                    get() {
+                        return methods[key];
+                    }
+                })     
             }
             this.proxyVm(this.$data);
             // 用 Object.defineProperty 来做数据劫持
@@ -63,6 +71,9 @@ class Vue {
             Object.defineProperty(this, key, {
                 get() {
                     return data[key]
+                },
+                set(newVal) {
+                    return data[key] = newVal;
                 }
             })
         }
@@ -194,13 +205,18 @@ CompileUtil = {
         fn(node, value);
     },
     on(node, expr, vm, eventName) {
-        node.addEventListener(eventName, () => {
-            alert(expr)
+        node.addEventListener(eventName, (e) => {
+            vm[expr](e);
         })    
     },
-    html() {
+    html(node, expr, vm) {
         // node.innerHTML
-
+        let fn = this.updater['htmlUpdater'];
+        new watcher(vm, expr, (newVal) => {
+            fn(node, newVal);
+        })
+        let value = this.getVal(vm, expr);
+        fn(node, value);
     },
     getContentValue(vm, expr) {
         // 遍历表达式，将内容重新替换成一个完整的内容，返回
@@ -209,7 +225,7 @@ CompileUtil = {
         })
     },
     text(node, expr, vm) {  // {{a}} {{b}}
-        let fn = this.updater["textUpdater"];
+        let fn = this.updater['textUpdater'];
         // replace 可以指定一个函数作为第二个参数。
         // 在这种情况下，当匹配执行后，该函数就会执行。 
         // 函数的返回值作为替换字符串。

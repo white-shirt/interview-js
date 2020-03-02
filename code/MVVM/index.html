@@ -11,6 +11,7 @@
         <input type="text" v-model="school.name"/>
         <div>{{ school.name }}</div>
         <div>{{ school.age }}</div>
+        <div v-html="message"></div>
         {{getNewName}}
         <ul>
             <li>1</li>
@@ -20,23 +21,24 @@
     </div>
     <script>
         let vm = new Vue({
-            el: "#app",
+            el: '#app',
             data() {
                 return {
                     school: {
-                        name: "武大",
+                        name: '武大',
                         age: 100
-                    }
+                    },
+                    message: '<h1>hello world</h1>'
                 }
             },
             methods: {
                 change() {
-                    this.school.name = "华科";
+                    this.school.name = '华科';
                 }
             },
             computed: {
                 getNewName() {
-                    return this.school.name + "武汉";
+                    return this.school.name + '武汉';
                 }
             }
         })
