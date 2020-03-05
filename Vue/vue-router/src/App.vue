@@ -1,17 +1,22 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <router-link :to='{ name: "world", params: { username: "zk_world" } }'>world</router-link>
+    <router-link :to='{ name: "hello", params: { username: "zk_hello" } }'>hello</router-link>
+    <router-view></router-view>
+    <router-view name='left' style='float:left;width:50%;background-color:#ccc;height:300px;'></router-view>
+    <router-view name='right' style='float:right;width:50%;background-color:yellowgreen;height:300px;'></router-view>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+
 
 export default {
   name: 'App',
-  components: {
-    HelloWorld
+  data() {
+    return {
+
+    }
   }
 }
 </script>
@@ -23,6 +28,10 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
 }
 </style>
