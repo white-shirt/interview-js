@@ -10,11 +10,14 @@ class Dep {
     }
     // 发布
     notify() {
-        this.subs.forEach(watcher => watcher.update());    
+        this.subs.forEach(watcher => {
+            console.log('发布')
+            watcher.update()
+        });
     }
 }
 
-// 观察者
+// 订阅者
 class watcher {
     constructor(vm, expr, cb) {
         this.vm = vm;
