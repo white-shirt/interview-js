@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hash 路由</title>
+    <style>
+        html, body {
+            width: 100%;
+            height:100%;
+        }
+    </style>
+</head>
+<body>
+    <a href='#/page1'>page1</a>
+    <a href='#/page2'>page2</a>
+    <a href='#/page3'>page3</a>
+    <a href='#/page4'>page4</a>
+    <div id='container'></div>
+
+    <script>
+        class HashRouter {
+            constructor() {
+                this.routers = {}
+                window.addEventListener('hashchange', this.load.bind(this), false)
+            }
+            // 注册更新视图
+            register(hash, callback) {
+                this.routers[hash] = callback
+            }
+            // 注册更新首页
+            registerIndex(callback) {
+                this.routers['index'] = callback
+            }
+            load() {
+                var hash = location.hash.slice(1)
+                var handler;
+                if (!hash) {
+                    handler = this.routers['index']
+                } else {
+                    handler = this.routers[hash]
+                }
+                handler.apply(this)
+            }
+        }
+
+        var router = new HashRouter()
+        var container = document.getElementById('container')
+        router.registerIndex(() => container.innerHTML = 'index')
+        router.register('/page1', () => container.innerHTML = 'page1')
+        router.register('/page2', () => container.innerHTML = 'page2')
+        router.register('/page3', () => container.innerHTML = 'page3')
+        router.register('/page4', () => container.innerHTML = 'page4')
+        router.load()
+    </script>
+</body>
+</html>
