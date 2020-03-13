@@ -1,7 +1,11 @@
-const layer = function () {
+import layer from './layer.html'
+import './layer.css'
+
+const layerTpl = function () {
     return {
-        name: 'layer'
+        name: 'layer',
+        tpl: layer
     }
 }
 
-export default layer;
+export default layerTpl;

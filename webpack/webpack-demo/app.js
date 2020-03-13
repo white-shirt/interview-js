@@ -1,7 +1,10 @@
-import layer from './src/component/layer/layer.js'
+import Layer from './src/component/layer/layer.js'
+import './src/style/common.css'
 
 function app() {
-    console.log(layer)
+    let dom = document.getElementById('app')
+    let layer = new Layer()
+    dom.innerHTML = layer.tpl
 }
 
 app();
