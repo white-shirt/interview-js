@@ -150,6 +150,8 @@ function receiveMessage(event) {
 
 ## CORS  
 
+服务端设置 Access-Control-Allow-Origin 就可以开启 CORS。 该属性表示哪些域名可以访问资源，如果设置通配符则表示所有网站都可以访问资源。
+
 支持CORS请求的浏览器一旦发现ajax请求跨域，会对请求做一些特殊处理，对于已经实现CORS接口的服务端，接受请求，并做出回应。  
 
 浏览器对跨域请求区分为“简单请求”与“非简单请求”  
