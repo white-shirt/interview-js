@@ -6,6 +6,9 @@ import router from './router'
 Vue.use(VueRouter)
 
 Vue.config.productionTip = false
+Vue.config.errorHandler = function (err, vm, info) {
+  console.log(`Error${err},${vm},${info}`)
+}
 
 new Vue({
   router,

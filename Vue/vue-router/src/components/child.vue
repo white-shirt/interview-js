@@ -2,7 +2,7 @@
     <div class='child'>
         <div v-for='(item, index) in items' :key='index'>
             <p>child component {{item.name}}</p>
-            
+            <slot></slot>
         </div>
     </div>
 </template>
@@ -29,6 +29,17 @@ export default {
         return {
             
         }
+    },
+    methods: {
+        test() {
+
+        }
+    },
+    mounted() {
+        var _this = this;
+        setInterval(function () {
+            _this.$forceUpdate()
+        }, 1000)
     }
 }
 </script>
