@@ -17,6 +17,8 @@ add(1 ,2)
 ```javascript
 // webpack.config.js
 export default {
+    // mode: development 需要配置 optimization(优化)
+    // mode: production 不需要配置此项
     optimization: {
         // 打包被使用的模块
         usedExports: true
