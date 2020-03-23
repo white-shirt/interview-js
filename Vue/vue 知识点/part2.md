@@ -173,5 +173,155 @@ Vue.nextTick(function () {
 })
 ```
 
+# 11. v-for 中 key 的作用是什么  
+
+key 是给每个 vnode 指定的唯一 id，在同级的 vnode  diff 过程中，可以根据 key 快速的对比，来判断是否为相同节点，并且利用 key 的唯一性可以生成 map 来更快的获取相应的节点。
+另外指定 key 后，就不再采用“就地复用”策略了，可以保证渲染的准确性。  
+
+# 12. 为什么 v-for 和 v-if 不建议用在一起  
+
+当 v-for 和 v-if 处于同一个节点时，v-for 的优先级比 v-if 更高，这意味着 v-if 将分别重复运行于每个 v-for 循环中。如果要遍历的数组很大，而真正要展示的数据很少时，这将造成很大的性能浪费。
+这种场景建议使用 computed，先对数据进行过滤。
+
+
+# 13. Vue导航守卫  
+
+导航守卫表示当导航开始变化到导航变化结束的那段时间里，根据导航的变化做出一些响应。  
+
+### 13.1 全局守卫  
+
+1. router.beforeEach(): 全局前置钩子，进入路由之前
+2. router.beforeResolve():  全局解析钩子，在 beforeRouteEnter 调用之后调用
+3. router.afterEach():  全局后置钩子，进入路由之后  
+
+```javascript
+import Vue from 'vue'
+import Router from 'vue-router'
+import route from './router'
+
+Vue.use(Router)
+
+const router = new Router({
+    routes: route
+})
+
+const HAS_LOGIN = true;
+
+// 全局前置钩子
+router.beforeEach((to, from, next) => {
+    // to from 都是路由实例
+    if (to.name !== 'login') {
+        if (HAS_LOGIN) next();
+        else next({ name: 'login' })
+    } else {
+        if (HAS_LOGIN) next({ name: 'home' });
+        else next();
+    }
+})
+
+// 全局解析钩子
+router.beforeResolve((to, from, next) => {
+
+})
+
+// 全局后置钩子
+router.afterEach((to, from) => {
+
+})
+
+export default router;
+```
+
+### 13.2 路由独享的守卫  
+
+`beforeEnter`
+
+```javascript
+{
+    path: '/',
+    name: 'home',
+    component: Home,
+    beforeEnter: (to, from, next) => {
+        if (from.name === 'xxx') {
+            
+        } else {
+
+        }
+        next()
+    }
+}
+```
+
+### 13.3 路由组件内的守卫  
+
+* beforeRouteEnter(): 进入路由前
+* beforeRouteUpdate(): 路由复用同一个组件时
+* beforeRouteLeave(): 离开当前路由时  
+
+```javascript
+export default {
+  // 组件内守卫
+  // 因为这个钩子调用的时候，组件实例还没有被创建出来，因此获取不到this
+  beforeRouteEnter (to, from, next) {
+    console.log(to.name);
+    // 如果想获取到实例的话
+    // next(vm=>{
+    //   // 这里的vm是组件的实例（this）
+    // });
+    next();
+  },
+  // 路由即将要离开的时候调用此方法
+  // 比如说，用户编辑了一个东西，但是还么有保存，这时候他要离开这个页面，就要提醒他一下，还没保存，是否要离开
+  beforeRouteLeave (to, from, next) {
+    const leave = confirm("确定要离开吗？");
+    if(leave) next()    // 离开
+    else next(false)    // 不离开
+  },
+}
+```
+
+### 13.4 一个完整的导航解析流程  
+
+1. 导航被触发。
+2. 在失活的组件（即将离开的页面组件）里调用离开守卫。beforeRouteLeave
+3. 调用全局的 beforeEach 守卫。
+4. 在重用的组件里调用 beforeRouteUpdate 守卫 (2.2+)。
+5. 在路由配置里调用（路由独享的守卫） beforeEnter。
+6. 解析异步路由组件
+7. 在被激活的组件（即将进入的页面组件）里调用 beforeRouteEnter。
+8. 调用全局的 beforeResolve 守卫 (2.5+)。
+9. 导航被确认。
+10. 调用全局的 afterEach 钩子。所有的钩子都触发完了。
+11. 触发 DOM 更新。
+12. 用创建好的实例调用 beforeRouteEnter 守卫中传给 next 的回调函数。
+
+# 14. 父组件监听子组件的生命周期  
+
+```javascript
+// Parent.vue
+<Child @mounted="doSomething"/>
+    
+// Child.vue
+mounted() {
+  this.$emit("mounted");
+}
+
+//  Parent.vue
+<Child @hook:mounted="doSomething" ></Child>
+
+doSomething() {
+   console.log('父组件监听到 mounted 钩子函数 ...');
+},
+    
+//  Child.vue
+mounted(){
+   console.log('子组件触发 mounted 钩子函数 ...');
+}, 
+
+```
+
+
+
+
 
 
