@@ -29,8 +29,8 @@
                     this.close();
                 }
             }
+            this.oninit();
 
-            
         }
         createDialog() {
 
@@ -46,6 +46,7 @@
                 this.autoTimer = setTimeout(() => {
                     this.close();
                 }, this.duration)
+                this.onopen()
                 return;
             }
 
@@ -58,7 +59,8 @@
                     document.body.removeChild(this.messageBox);
                     this.messageBox.removeEventListener('transitionend', _anonymous)
                 }
-                this.messageBox.addEventListener('transitionend', _anonymous)
+                this.messageBox.addEventListener('transitionend', _anonymous);
+                this.onclose();
                 return;
             }
         }
